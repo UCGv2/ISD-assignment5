@@ -1,0 +1,71 @@
+language: cpp
+sudo: false
+
+matrix:
+  allow_failures:
+    # To allow a build matrix entry to fail, add this key to said entry.
+    - custom_allow_failures: true
+
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            # Want clang-format 7
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-7
+          packages:
+            - clang-format-7
+      env:
+        - KEY=linter
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            # Want clang-7
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-7
+          packages:
+            - libstdc++-7-dev
+            - clang-7
+      env:
+        - KEY=clang++-7 MATRIX_EVAL="CC=clang-7 && CXX=clang++-7"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            # Want GCC 8 or greater
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+      env:
+        - KEY=g++-8 MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
+
+before_install:
+  # Recognize the freshly installed compilers
+  - eval "${MATRIX_EVAL}"
+  # Install modern cmake
+  - mkdir $HOME/usr
+  - export PATH="$HOME/usr/bin:$PATH"
+  - wget https://cmake.org/files/v3.9/cmake-3.9.6-Linux-x86_64.sh
+  - chmod +x cmake-3.9.6-Linux-x86_64.sh
+  - ./cmake-3.9.6-Linux-x86_64.sh --prefix=$HOME/usr --exclude-subdir --skip-license
+
+  # Report versions - just to double check
+  - cmake --version
+  - $CXX --version
+
+install:
+  # setup cmake
+  - mkdir bin
+
+script:
+  - . .travis.sh
+
+after_success:
+  - echo "Yay! Your code passed this test."
+
+after_failure:
+  - echo "Uh-oh - something is wrong with your code!"
